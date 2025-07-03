@@ -17,6 +17,9 @@ if not GEMINI_API_KEY:
     st.error("❌ GEMINI_API_KEY not found in environment variables. Please check your .env file.")
     st.stop()
 
+# Get Gemini model from environment with default fallback
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+
 genai.configure(api_key=GEMINI_API_KEY)
 
 def get_mime_type(audio_path):
@@ -41,7 +44,7 @@ def transcribe_with_gemini(audio_path):
     """Transcribe audio using Gemini API"""
     try:
         # Initialize Gemini model
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel(GEMINI_MODEL)
         
         # Get MIME type for the audio file
         mime_type = get_mime_type(audio_path)
@@ -162,11 +165,143 @@ def main():
         layout="wide"
     )
     
+    # Add custom CSS for reading mode
+    st.markdown("""
+    <style>
+    .reading-mode {
+        max-width: 100%;
+        margin: 0;
+        padding: 80px 40px 40px 40px;
+        line-height: 1.8;
+        font-size: 18px;
+        font-family: 'Charter', 'Georgia', serif;
+        color: #292929;
+        background: #ffffff;
+        min-height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 999;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+    
+    .reading-mode h1, .reading-mode h2, .reading-mode h3 {
+        font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-weight: 600;
+        margin-top: 2em;
+        margin-bottom: 0.5em;
+        color: #242424;
+    }
+    
+    .reading-mode h1 {
+        font-size: 32px;
+        margin-bottom: 16px;
+    }
+    
+    .reading-mode h2 {
+        font-size: 24px;
+        margin-bottom: 12px;
+    }
+    
+    .reading-mode p {
+        margin-bottom: 1.5em;
+        text-align: justify;
+    }
+    
+    .reading-mode ul, .reading-mode ol {
+        margin-bottom: 1.5em;
+        padding-left: 1.5em;
+    }
+    
+    .reading-mode li {
+        margin-bottom: 0.5em;
+    }
+    
+    .reading-mode blockquote {
+        border-left: 3px solid #e6e6e6;
+        margin: 1.5em 0;
+        padding-left: 1.5em;
+        font-style: italic;
+        color: #6b6b6b;
+    }
+    
+    .reading-mode-button {
+        background: #1a73e8;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        cursor: pointer;
+        margin-bottom: 20px;
+        transition: background-color 0.3s;
+    }
+    
+    .reading-mode-button:hover {
+        background: #1557b0;
+    }
+    
+    .exit-reading-mode {
+        text-align: center;
+        margin-bottom: 20px;
+        position: sticky;
+        top: 0;
+        background: #ffffff;
+        padding: 20px 0;
+        border-bottom: 1px solid #e0e0e0;
+        z-index: 1001;
+    }
+    
+    .exit-reading-mode button {
+        background: #f8f9fa;
+        color: #5f6368;
+        border: 1px solid #dadce0;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .exit-reading-mode button:hover {
+        background: #e8f0fe;
+        border-color: #1a73e8;
+        color: #1a73e8;
+    }
+    
+    /* Hide Streamlit elements in reading mode */
+    .reading-mode-active .stSidebar {
+        display: none;
+    }
+    
+    .reading-mode-active .stMainBlockContainer {
+        padding: 0;
+    }
+    
+    .reading-mode-active .stAppHeader {
+        display: none;
+    }
+    
+    .reading-mode-content {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.title("🎙️ Audio Transcription with Gemini + Claude")
     st.markdown("Upload an audio file to transcribe with Gemini API and process with Claude CLI")
     
     # Sidebar for configuration
     st.sidebar.header("Configuration")
+    
+    # Display current Gemini model
+    st.sidebar.info(f"📡 Using Gemini Model: **{GEMINI_MODEL}**")
     
     # Task selection
     task = st.sidebar.selectbox(
@@ -312,37 +447,137 @@ def main():
         # Display results if available
         if hasattr(st.session_state, 'transcript') and st.session_state.transcript:
             
-            # Tabs for different outputs
-            tab1, tab2, tab3 = st.tabs(["Original Transcript", f"Claude {st.session_state.task.title()}", "Download"])
+            # Check if reading mode is enabled
+            reading_mode = st.session_state.get('reading_mode', False)
             
-            with tab1:
-                st.subheader("Original Transcript")
-                st.text_area(
-                    "Transcript from Gemini API",
-                    value=st.session_state.transcript,
-                    height=300,
-                    disabled=True
-                )
-            
-            with tab2:
-                st.subheader(f"Claude {st.session_state.task.title()} ({st.session_state.target_language})")
-                if st.session_state.processed_text:
+            if reading_mode:
+                # Reading Mode View
+                # Add custom styles for the exit button
+                st.markdown("""
+                <style>
+                /* Hide ALL Streamlit UI elements */
+                .stApp > header,
+                header[data-testid="stHeader"],
+                .stDeployButton,
+                [data-testid="stToolbar"],
+                [data-testid="stDecoration"],
+                #MainMenu,
+                footer,
+                .viewerBadge_container__1QSob,
+                .styles_viewerBadge__1yB5_ {
+                    display: none !important;
+                    visibility: hidden !important;
+                    opacity: 0 !important;
+                    height: 0 !important;
+                    overflow: hidden !important;
+                }
+                
+                /* Hide any element containing "Deploy" text */
+                *:has-text("Deploy") {
+                    display: none !important;
+                }
+                
+                /* Ensure our button is the only one visible */
+                .element-container:has(.stButton) {
+                    position: fixed !important;
+                    top: 20px !important;
+                    right: 20px !important;
+                    z-index: 999999 !important;
+                    width: auto !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    isolation: isolate !important;
+                }
+                
+                /* Style the exit button */
+                .stButton > button {
+                    background-color: #ff4b4b;
+                    color: white;
+                    font-weight: bold;
+                    border: none;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    transition: all 0.3s ease;
+                }
+                
+                .stButton > button:hover {
+                    background-color: #ff3333;
+                    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+                    transform: translateY(-2px);
+                }
+                </style>
+                """, unsafe_allow_html=True)
+                
+                # Add the exit button first
+                if st.button("✕ Exit Full Screen", key="exit_fullscreen_btn"):
+                    st.session_state.reading_mode = False
+                    st.rerun()
+                
+                # Format content for reading mode
+                content = st.session_state.processed_text or st.session_state.transcript
+                
+                # Convert content to HTML with proper formatting
+                formatted_content = content.replace('\n\n', '</p><p>').replace('\n', '<br>')
+                formatted_content = f"<p>{formatted_content}</p>"
+                
+                # Add headers for sections marked with **
+                import re
+                formatted_content = re.sub(r'\*\*(.*?)\*\*', r'<h3>\1</h3>', formatted_content)
+                
+                # Create the full screen reading mode
+                st.markdown(f"""
+                <div class="reading-mode">
+                    <div class="reading-mode-content">
+                        <h1>{st.session_state.get('task', 'Summarize').title() if hasattr(st.session_state, 'task') else 'Summarize'} ({st.session_state.get('target_language', 'Thai')})</h1>
+                        <p><em>Source: {st.session_state.get('filename', 'Unknown')}</em></p>
+                        {formatted_content}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            else:
+                # Normal Tabs View
+                # Tabs for different outputs
+                tab1, tab2, tab3 = st.tabs(["Original Transcript", f"Claude {st.session_state.task.title()}", "Download"])
+                
+                with tab1:
+                    st.subheader("Original Transcript")
                     st.text_area(
-                        f"Processed by Claude CLI in {st.session_state.target_language}",
-                        value=st.session_state.processed_text,
+                        "Transcript from Gemini API",
+                        value=st.session_state.transcript,
                         height=300,
                         disabled=True
                     )
-                else:
-                    st.warning("Claude processing failed or returned no result")
-            
-            with tab3:
-                st.subheader("Download Results")
                 
-                # Prepare download content
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                with tab2:
+                    st.subheader(f"Claude {st.session_state.task.title()} ({st.session_state.target_language})")
+                    
+                    # Add reading mode button
+                    col_btn, col_space = st.columns([1, 4])
+                    with col_btn:
+                        if st.button("📖 Reading Mode", key="enter_reading"):
+                            st.session_state.reading_mode = True
+                            st.rerun()
+                    
+                    if st.session_state.processed_text:
+                        st.text_area(
+                            f"Processed by Claude CLI in {st.session_state.target_language}",
+                            value=st.session_state.processed_text,
+                            height=300,
+                            disabled=True
+                        )
+                    else:
+                        st.warning("Claude processing failed or returned no result")
                 
-                download_content = f"""Audio Transcription Results
+                with tab3:
+                    st.subheader("Download Results")
+                    
+                    # Prepare download content
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    
+                    download_content = f"""Audio Transcription Results
 Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 Source File: {st.session_state.filename}
 Task: {st.session_state.task.title()} in {st.session_state.target_language}
@@ -353,17 +588,17 @@ Task: {st.session_state.task.title()} in {st.session_state.target_language}
 === CLAUDE {st.session_state.task.upper()} ({st.session_state.target_language.upper()}) ===
 {st.session_state.processed_text or "Processing failed"}
 """
-                
-                st.download_button(
-                    label="📥 Download Results",
-                    data=download_content,
-                    file_name=f"transcript_{timestamp}.txt",
-                    mime="text/plain",
-                    type="primary"
-                )
-                
-                # Copy to clipboard option
-                st.code(download_content, language=None)
+                    
+                    st.download_button(
+                        label="📥 Download Results",
+                        data=download_content,
+                        file_name=f"transcript_{timestamp}.txt",
+                        mime="text/plain",
+                        type="primary"
+                    )
+                    
+                    # Copy to clipboard option
+                    st.code(download_content, language=None)
         
         else:
             st.info("Upload an audio file and click 'Transcribe & Process' to see results here.")
