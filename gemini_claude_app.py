@@ -274,10 +274,6 @@ def main():
     }
     
     /* Hide Streamlit elements in reading mode */
-    .reading-mode-active .stSidebar {
-        display: none;
-    }
-    
     .reading-mode-active .stMainBlockContainer {
         padding: 0;
     }
@@ -452,10 +448,10 @@ def main():
             
             if reading_mode:
                 # Reading Mode View
-                # Add custom styles for the exit button
+                # Add custom styles for reading mode
                 st.markdown("""
                 <style>
-                /* Hide ALL Streamlit UI elements */
+                /* Hide ALL Streamlit UI elements except sidebar */
                 .stApp > header,
                 header[data-testid="stHeader"],
                 .stDeployButton,
@@ -477,43 +473,24 @@ def main():
                     display: none !important;
                 }
                 
-                /* Ensure our button is the only one visible */
-                .element-container:has(.stButton) {
-                    position: fixed !important;
-                    top: 20px !important;
-                    right: 20px !important;
-                    z-index: 999999 !important;
-                    width: auto !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    isolation: isolate !important;
+                /* Keep sidebar visible in reading mode */
+                .stSidebar {
+                    display: block !important;
+                    z-index: 1000 !important;
                 }
                 
-                /* Style the exit button */
-                .stButton > button {
-                    background-color: #ff4b4b;
-                    color: white;
-                    font-weight: bold;
-                    border: none;
-                    padding: 12px 24px;
-                    border-radius: 8px;
-                    font-size: 16px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                    transition: all 0.3s ease;
-                }
-                
-                .stButton > button:hover {
-                    background-color: #ff3333;
-                    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
-                    transform: translateY(-2px);
+                /* Style the main content area */
+                [data-testid="stMain"] {
+                    padding-left: 0 !important;
                 }
                 </style>
                 """, unsafe_allow_html=True)
                 
-                # Add the exit button first
-                if st.button("✕ Exit Full Screen", key="exit_fullscreen_btn"):
-                    st.session_state.reading_mode = False
-                    st.rerun()
+                # Add exit button in sidebar
+                with st.sidebar:
+                    if st.button("✕ Exit Reading Mode", key="exit_reading_mode", type="primary", use_container_width=True):
+                        st.session_state.reading_mode = False
+                        st.rerun()
                 
                 # Format content for reading mode
                 content = st.session_state.processed_text or st.session_state.transcript
