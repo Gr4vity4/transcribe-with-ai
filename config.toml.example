@@ -1,0 +1,11 @@
+# Gemini API Configuration
+[gemini]
+api_key = "YOUR_GEMINI_API_KEY_HERE"
+
+# Model configuration for transcription
+# Available models (as of 2024):
+# - gemini-1.5-flash: Fast, efficient model for most use cases (recommended for transcription)
+# - gemini-1.5-flash-8b: Smaller, faster variant of Flash
+# - gemini-1.5-pro: Most capable model, better for complex tasks
+# - gemini-1.0-pro: Previous generation Pro model
+model = "gemini-1.5-flash"

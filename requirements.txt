@@ -5,4 +5,4 @@ pydub
 ffmpeg-python
 numpy<2
 google-generativeai
-python-dotenv
+toml

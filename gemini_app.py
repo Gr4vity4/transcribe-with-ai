@@ -6,19 +6,26 @@ import os
 import mimetypes
 from datetime import datetime
 import yt_dlp
-from dotenv import load_dotenv
+import toml
 
-# Load environment variables
-load_dotenv()
-
-# Configure Gemini API
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    st.error("❌ GEMINI_API_KEY not found in environment variables. Please check your .env file.")
+# Load configuration from TOML file
+try:
+    config = toml.load("config.toml")
+    GEMINI_API_KEY = config["gemini"]["api_key"]
+    GEMINI_MODEL = config["gemini"].get("model", "gemini-1.5-flash")
+except FileNotFoundError:
+    st.error("❌ config.toml file not found. Please create a config.toml file.")
+    st.stop()
+except KeyError as e:
+    st.error(f"❌ Missing configuration in config.toml: {e}")
+    st.stop()
+except Exception as e:
+    st.error(f"❌ Error loading config.toml: {e}")
     st.stop()
 
-# Get Gemini model from environment with default fallback
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+if not GEMINI_API_KEY:
+    st.error("❌ GEMINI_API_KEY not found in config.toml. Please check your configuration.")
+    st.stop()
 
 genai.configure(api_key=GEMINI_API_KEY)
 

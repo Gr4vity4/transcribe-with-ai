@@ -1,6 +1,9 @@
 # Environment variables
 .env
 
+# Configuration files with sensitive data
+config.toml
+
 # Python
 __pycache__/
 *.py[cod]
