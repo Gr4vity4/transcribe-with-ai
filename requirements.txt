@@ -1,0 +1,8 @@
+yt-dlp
+openai-whisper
+streamlit
+pydub
+ffmpeg-python
+numpy<2
+google-generativeai
+python-dotenv
