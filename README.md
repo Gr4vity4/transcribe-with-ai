@@ -1,16 +1,21 @@
-# YouTube Transcription App
+# YouTube Transcription & Processing App
 
-A simple web application that transcribes YouTube videos using OpenAI's Whisper model.
+A powerful web application that transcribes YouTube videos and audio files using Google's Gemini API with additional processing capabilities (summarization, translation, and analysis).
 
 ## Features
 - Download audio from YouTube URLs
-- Transcribe audio using Whisper (multiple model sizes available)
-- Download transcription as text file
+- Upload local audio files (MP3, WAV, M4A, AAC, FLAC, OGG)
+- Transcribe audio using Google's Gemini API
+- Process transcripts with Gemini (summarize, translate, analyze)
+- Support for multiple languages
+- Download transcription and processed results
+- Reading mode for better text viewing
 - Clean Streamlit UI
 
 ## Prerequisites
 - Python 3.8+
 - FFmpeg (required for audio processing)
+- Google Gemini API key
 
 ## Installation
 
@@ -24,25 +29,44 @@ A simple web application that transcribes YouTube videos using OpenAI's Whisper 
    pip install -r requirements.txt
    ```
 
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your Gemini API key
+   ```
+
 ## Usage
 
 Run the app:
 ```bash
-streamlit run transcribe_app.py
+streamlit run gemini_app.py
 ```
 
 Then:
 1. Open your browser to http://localhost:8501
-2. Enter a YouTube URL
-3. Select a Whisper model (larger models are more accurate but slower)
-4. Click "Transcribe"
-5. Download the transcription when complete
+2. Either:
+   - Enter a YouTube URL, or
+   - Upload an audio file
+3. Select a processing task (summarize, translate, or analyze)
+4. Choose target language if needed
+5. Click "Transcribe & Process" or "Download & Transcribe"
+6. View results in tabs or reading mode
+7. Download the transcription and processed results
 
-## Model Options
-- **tiny**: Fastest, least accurate (~1GB)
-- **base**: Good balance (~1GB)
-- **small**: Better accuracy (~2GB)
-- **medium**: High accuracy (~5GB)
-- **large**: Best accuracy (~10GB)
+## Gemini Models
+The app uses Google's Gemini API for transcription and processing:
+- Default: `gemini-1.5-flash` (fast and efficient)
+- Latest: `gemini-2.0-flash` (newest model with improved capabilities)
 
-Note: First run will download the selected model.
+You can set the model in your `.env` file:
+```
+GEMINI_MODEL=gemini-2.0-flash
+```
+
+## Processing Tasks
+- **Summarize**: Get concise summaries of transcripts
+- **Translate**: Translate transcripts to different languages
+- **Analyze**: Extract key points and themes
+
+## Supported Languages
+- English, Thai, Japanese, Korean, Chinese, French, German, Spanish

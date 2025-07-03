@@ -67,9 +67,12 @@ def transcribe_with_gemini(audio_path):
         st.error(f"Error transcribing with Gemini: {e}")
         return None
 
-def process_with_claude(text, task="summarize", target_language="English"):
-    """Process text using Claude CLI"""
+def process_with_gemini(text, task="summarize", target_language="English"):
+    """Process text using Gemini API"""
     try:
+        # Initialize Gemini model for processing
+        model = genai.GenerativeModel('gemini-2.0-flash')
+        
         # Prepare the prompt based on task and target language
         if task == "summarize":
             prompt = f"Please provide a concise summary of the following transcript in {target_language}:\n\n{text}"
@@ -80,19 +83,17 @@ def process_with_claude(text, task="summarize", target_language="English"):
         else:
             prompt = f"Please {task} the following transcript in {target_language}:\n\n{text}"
         
-        # Use Claude CLI with --print flag for non-interactive mode
-        result = subprocess.run([
-            'claude', '--print', prompt
-        ], capture_output=True, text=True)
+        # Generate response with Gemini
+        response = model.generate_content(prompt)
         
-        if result.returncode == 0:
-            return result.stdout.strip()
+        if response.text:
+            return response.text.strip()
         else:
-            st.error(f"Error with Claude CLI: {result.stderr}")
+            st.error("Gemini returned no text")
             return None
     
     except Exception as e:
-        st.error(f"Error processing with Claude: {e}")
+        st.error(f"Error processing with Gemini: {e}")
         return None
 
 def download_youtube_audio(youtube_url, progress_bar, status_text):
@@ -160,7 +161,7 @@ def format_duration(seconds):
 
 def main():
     st.set_page_config(
-        page_title="Gemini + Claude Transcription",
+        page_title="Gemini Transcription & Processing",
         page_icon="🎙️",
         layout="wide"
     )
@@ -290,8 +291,8 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
-    st.title("🎙️ Audio Transcription with Gemini + Claude")
-    st.markdown("Upload an audio file to transcribe with Gemini API and process with Claude CLI")
+    st.title("🎙️ Audio Transcription with Gemini")
+    st.markdown("Upload an audio file to transcribe and process with Gemini API")
     
     # Sidebar for configuration
     st.sidebar.header("Configuration")
@@ -301,10 +302,10 @@ def main():
     
     # Task selection
     task = st.sidebar.selectbox(
-        "Claude Processing Task",
+        "Gemini Processing Task",
         ["summarize", "translate", "analyze"],
         index=0,
-        help="Choose how Claude should process the transcript"
+        help="Choose how Gemini should process the transcript"
     )
     
     # Language selection
@@ -312,7 +313,7 @@ def main():
         "Target Language",
         ["English", "Thai", "Japanese", "Korean", "Chinese", "French", "German", "Spanish"],
         index=0,
-        help="Choose the language for Claude's output"
+        help="Choose the language for Gemini's output"
     )
     
     # Main content area
@@ -356,11 +357,11 @@ def main():
                         
                         if transcript:
                             progress_bar.progress(50)
-                            status_text.text("Transcription completed! Processing with Claude...")
+                            status_text.text("Transcription completed! Processing with Gemini...")
                             
-                            # Step 2: Process with Claude
+                            # Step 2: Process with Gemini
                             progress_bar.progress(75)
-                            processed_text = process_with_claude(transcript, task, target_language)
+                            processed_text = process_with_gemini(transcript, task, target_language)
                             
                             progress_bar.progress(100)
                             status_text.text("Processing completed!")
@@ -410,10 +411,10 @@ def main():
                         
                         if transcript:
                             progress_bar.progress(80)
-                            status_text.text("Transcription completed! Processing with Claude...")
+                            status_text.text("Transcription completed! Processing with Gemini...")
                             
-                            # Step 3: Process with Claude
-                            processed_text = process_with_claude(transcript, task, target_language)
+                            # Step 3: Process with Gemini
+                            processed_text = process_with_gemini(transcript, task, target_language)
                             
                             progress_bar.progress(100)
                             status_text.text("Processing completed!")
@@ -517,7 +518,7 @@ def main():
             else:
                 # Normal Tabs View
                 # Tabs for different outputs
-                tab1, tab2, tab3 = st.tabs(["Original Transcript", f"Claude {st.session_state.task.title()}", "Download"])
+                tab1, tab2, tab3 = st.tabs(["Original Transcript", f"Gemini {st.session_state.task.title()}", "Download"])
                 
                 with tab1:
                     st.subheader("Original Transcript")
@@ -529,7 +530,7 @@ def main():
                     )
                 
                 with tab2:
-                    st.subheader(f"Claude {st.session_state.task.title()} ({st.session_state.target_language})")
+                    st.subheader(f"Gemini {st.session_state.task.title()} ({st.session_state.target_language})")
                     
                     # Add reading mode button
                     col_btn, col_space = st.columns([1, 4])
@@ -540,13 +541,13 @@ def main():
                     
                     if st.session_state.processed_text:
                         st.text_area(
-                            f"Processed by Claude CLI in {st.session_state.target_language}",
+                            f"Processed by Gemini API in {st.session_state.target_language}",
                             value=st.session_state.processed_text,
                             height=300,
                             disabled=True
                         )
                     else:
-                        st.warning("Claude processing failed or returned no result")
+                        st.warning("Gemini processing failed or returned no result")
                 
                 with tab3:
                     st.subheader("Download Results")
@@ -562,7 +563,7 @@ Task: {st.session_state.task.title()} in {st.session_state.target_language}
 === ORIGINAL TRANSCRIPT ===
 {st.session_state.transcript}
 
-=== CLAUDE {st.session_state.task.upper()} ({st.session_state.target_language.upper()}) ===
+=== GEMINI {st.session_state.task.upper()} ({st.session_state.target_language.upper()}) ===
 {st.session_state.processed_text or "Processing failed"}
 """
                     
@@ -582,7 +583,7 @@ Task: {st.session_state.task.title()} in {st.session_state.target_language}
     
     # Footer
     st.markdown("---")
-    st.markdown("🔧 **Tech Stack**: Gemini API for transcription • Claude CLI for processing")
+    st.markdown("🔧 **Tech Stack**: Gemini API for transcription and processing")
 
 if __name__ == "__main__":
     main()
